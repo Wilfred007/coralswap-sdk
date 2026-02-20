@@ -1,4 +1,5 @@
 import { CoralSwapClient } from '../client';
+import { PairClient } from '../contracts/pair';
 import { TradeType } from '../types/common';
 import { SwapRequest, SwapQuote, SwapResult, HopResult } from '../types/swap';
 import { PRECISION, DEFAULTS } from '../config';
@@ -345,7 +346,7 @@ export class SwapModule {
   /**
    * Determine if tokenIn is token0 in the pair ordering.
    */
-  private async isToken0(pair: any, tokenIn: string): Promise<boolean> {
+  private async isToken0(pair: PairClient, tokenIn: string): Promise<boolean> {
     const tokens = await pair.getTokens();
     return tokens.token0 === tokenIn;
   }
