@@ -9,6 +9,12 @@ import {
   InsufficientLiquidityError,
   TransactionError,
 } from '../errors';
+import {
+  validateAddress,
+  validatePositiveAmount,
+  validateSlippage,
+  validateDistinctTokens,
+} from '../utils/validation';
 
 /**
  * Swap module -- builds, quotes, and executes token swaps.
@@ -35,6 +41,12 @@ export class SwapModule {
    * Falls back to direct swap for a 2-token path or no path.
    */
   async getQuote(request: SwapRequest): Promise<SwapQuote> {
+    validatePositiveAmount(request.amount, 'amount');
+    validateAddress(request.tokenIn, 'tokenIn');
+    validateAddress(request.tokenOut, 'tokenOut');
+    validateDistinctTokens(request.tokenIn, request.tokenOut);
+    if (request.slippageBps !== undefined) validateSlippage(request.slippageBps);
+
     const path = this.resolvePath(request);
 
     if (path.length < 2) {
@@ -56,6 +68,12 @@ export class SwapModule {
    * swap_exact_out as before.
    */
   async execute(request: SwapRequest): Promise<SwapResult> {
+    validatePositiveAmount(request.amount, 'amount');
+    validateAddress(request.tokenIn, 'tokenIn');
+    validateAddress(request.tokenOut, 'tokenOut');
+    validateDistinctTokens(request.tokenIn, request.tokenOut);
+    if (request.slippageBps !== undefined) validateSlippage(request.slippageBps);
+
     const path = this.resolvePath(request);
     const quote = await this.getQuote(request);
 
