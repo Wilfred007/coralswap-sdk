@@ -12,14 +12,7 @@ import {
 import { PRECISION, DEFAULTS } from '../config';
 import {
   TransactionError,
-} from '../errors';
-import {
-  validateAddress,
-  validatePositiveAmount,
-  validateSlippage,
-  validateDistinctTokens,
-} from '../utils/validation';
-
+} from "../errors";
 
 /**
  * Swap module -- builds, quotes, and executes token swaps.
@@ -55,7 +48,9 @@ export class SwapModule {
     const path = this.resolvePath(request);
 
     if (path.length < 2) {
-      throw new ValidationError('Swap path must contain at least 2 tokens', { path });
+      throw new ValidationError("Swap path must contain at least 2 tokens", {
+        path,
+      });
     }
 
     if (path.length === 2) {
@@ -82,7 +77,7 @@ export class SwapModule {
     const path = this.resolvePath(request);
     const quote = await this.getQuote(request);
 
-    let op: import('@stellar/stellar-sdk').xdr.Operation;
+    let op: import("@stellar/stellar-sdk").xdr.Operation;
 
     if (path.length > 2) {
       // Multi-hop: router handles the full path
@@ -118,7 +113,7 @@ export class SwapModule {
 
     if (!result.success) {
       throw new TransactionError(
-        `Swap failed: ${result.error?.message ?? 'Unknown error'}`,
+        `Swap failed: ${result.error?.message ?? "Unknown error"}`,
         result.txHash,
       );
     }
@@ -242,8 +237,17 @@ export class SwapModule {
     reserveOut: bigint,
     feeBps: number,
   ): bigint {
-    if (amountIn <= 0n) throw new ValidationError('Insufficient input amount');
-    if (reserveIn <= 0n || reserveOut <= 0n) throw new InsufficientLiquidityError('unknown');
+    if (amountIn <= 0n) {
+      throw new ValidationError("Insufficient input amount", {
+        amountIn: amountIn.toString(),
+      });
+    }
+    if (reserveIn <= 0n || reserveOut <= 0n) {
+      throw new InsufficientLiquidityError("unknown", {
+        reserveIn: reserveIn.toString(),
+        reserveOut: reserveOut.toString(),
+      });
+    }
 
     const feeFactor = BigInt(10000 - feeBps);
     const amountInWithFee = amountIn * feeFactor;
@@ -261,9 +265,24 @@ export class SwapModule {
     reserveOut: bigint,
     feeBps: number,
   ): bigint {
-    if (amountOut <= 0n) throw new ValidationError('Insufficient output amount');
-    if (reserveIn <= 0n || reserveOut <= 0n) throw new InsufficientLiquidityError('unknown');
-    if (amountOut >= reserveOut) throw new InsufficientLiquidityError('unknown', { reason: 'Output amount exceeds available reserves' });
+    if (amountOut <= 0n) {
+      throw new ValidationError("Insufficient output amount", {
+        amountOut: amountOut.toString(),
+      });
+    }
+    if (reserveIn <= 0n || reserveOut <= 0n) {
+      throw new InsufficientLiquidityError("unknown", {
+        reserveIn: reserveIn.toString(),
+        reserveOut: reserveOut.toString(),
+      });
+    }
+    if (amountOut >= reserveOut) {
+      throw new InsufficientLiquidityError("unknown", {
+        reason: "Output amount exceeds available reserves",
+        amountOut: amountOut.toString(),
+        reserveOut: reserveOut.toString(),
+      });
+    }
 
     const feeFactor = BigInt(10000 - feeBps);
     const numerator = reserveIn * amountOut * 10000n;
@@ -289,7 +308,10 @@ export class SwapModule {
   /**
    * Direct (single-hop) quote -- identical to the original getQuote logic.
    */
-  private async getDirectQuote(request: SwapRequest, path: string[]): Promise<SwapQuote> {
+  private async getDirectQuote(
+    request: SwapRequest,
+    path: string[],
+  ): Promise<SwapQuote> {
     const [tokenIn, tokenOut] = path;
 
     const pairAddress = await this.client.getPairAddress(tokenIn, tokenOut);
@@ -313,17 +335,32 @@ export class SwapModule {
 
     if (request.tradeType === TradeType.EXACT_IN) {
       amountIn = request.amount;
-      amountOut = this.getAmountOut(amountIn, reserveIn, reserveOut, dynamicFee);
+      amountOut = this.getAmountOut(
+        amountIn,
+        reserveIn,
+        reserveOut,
+        dynamicFee,
+      );
     } else {
       amountOut = request.amount;
       amountIn = this.getAmountIn(amountOut, reserveIn, reserveOut, dynamicFee);
     }
 
-    const slippageBps = request.slippageBps ?? this.client.config.defaultSlippageBps ?? DEFAULTS.slippageBps;
-    const amountOutMin = amountOut - (amountOut * BigInt(slippageBps)) / PRECISION.BPS_DENOMINATOR;
+    const slippageBps =
+      request.slippageBps ??
+      this.client.config.defaultSlippageBps ??
+      DEFAULTS.slippageBps;
+    const amountOutMin =
+      amountOut - (amountOut * BigInt(slippageBps)) / PRECISION.BPS_DENOMINATOR;
 
-    const priceImpactBps = this.calculatePriceImpact(amountIn, amountOut, reserveIn, reserveOut);
-    const feeAmount = (amountIn * BigInt(dynamicFee)) / PRECISION.BPS_DENOMINATOR;
+    const priceImpactBps = this.calculatePriceImpact(
+      amountIn,
+      amountOut,
+      reserveIn,
+      reserveOut,
+    );
+    const feeAmount =
+      (amountIn * BigInt(dynamicFee)) / PRECISION.BPS_DENOMINATOR;
 
     return {
       tokenIn,
@@ -350,11 +387,14 @@ export class SwapModule {
    *   totalFeeAmount = sum of per-hop fee amounts (denominated in each hop's tokenIn)
    *   compoundImpact = 1 - product((1 - impact_i/10000)) expressed in bps
    */
-  private async getMultiHopQuote(request: SwapRequest, path: string[]): Promise<SwapQuote> {
+  private async getMultiHopQuote(
+    request: SwapRequest,
+    path: string[],
+  ): Promise<SwapQuote> {
     if (request.tradeType !== TradeType.EXACT_IN) {
       // Exact-out multi-hop requires reverse path computation; not supported in v1.
       throw new ValidationError(
-        'Multi-hop routing only supports EXACT_IN trade type',
+        "Multi-hop routing only supports EXACT_IN trade type",
         { tradeType: request.tradeType },
       );
     }
@@ -366,13 +406,19 @@ export class SwapModule {
     const totalFeeBps = hops.reduce((acc, h) => acc + h.feeBps, 0);
 
     // Compound price impact: 1 - product(1 - impact_i)
-    const compoundImpactBps = this.compoundPriceImpact(hops.map((h) => h.priceImpactBps));
+    const compoundImpactBps = this.compoundPriceImpact(
+      hops.map((h) => h.priceImpactBps),
+    );
 
     const amountIn = hops[0].amountIn;
     const amountOut = hops[hops.length - 1].amountOut;
 
-    const slippageBps = request.slippageBps ?? this.client.config.defaultSlippageBps ?? DEFAULTS.slippageBps;
-    const amountOutMin = amountOut - (amountOut * BigInt(slippageBps)) / PRECISION.BPS_DENOMINATOR;
+    const slippageBps =
+      request.slippageBps ??
+      this.client.config.defaultSlippageBps ??
+      DEFAULTS.slippageBps;
+    const amountOutMin =
+      amountOut - (amountOut * BigInt(slippageBps)) / PRECISION.BPS_DENOMINATOR;
 
     return {
       tokenIn: path[0],
@@ -419,12 +465,26 @@ export class SwapModule {
       const reserveOut = isToken0In ? reserves.reserve1 : reserves.reserve0;
 
       if (reserveIn === 0n || reserveOut === 0n) {
-        throw new InsufficientLiquidityError(pairAddress, { tokenIn, tokenOut });
+        throw new InsufficientLiquidityError(pairAddress, {
+          tokenIn,
+          tokenOut,
+        });
       }
 
-      const amountOut = this.getAmountOut(currentAmountIn, reserveIn, reserveOut, feeBps);
-      const feeAmount = (currentAmountIn * BigInt(feeBps)) / PRECISION.BPS_DENOMINATOR;
-      const priceImpactBps = this.calculatePriceImpact(currentAmountIn, amountOut, reserveIn, reserveOut);
+      const amountOut = this.getAmountOut(
+        currentAmountIn,
+        reserveIn,
+        reserveOut,
+        feeBps,
+      );
+      const feeAmount =
+        (currentAmountIn * BigInt(feeBps)) / PRECISION.BPS_DENOMINATOR;
+      const priceImpactBps = this.calculatePriceImpact(
+        currentAmountIn,
+        amountOut,
+        reserveIn,
+        reserveOut,
+      );
 
       hops.push({
         tokenIn,
