@@ -36,3 +36,14 @@ export {
 } from './retry';
 
 export { Fraction, Percent, Rounding } from './math';
+
+export { EventParser, EVENT_TOPICS } from './events';
+
+export {
+  validateAddress,
+  validatePositiveAmount,
+  validateNonNegativeAmount,
+  validateSlippage,
+  validateDistinctTokens,
+} from './validation';
+
