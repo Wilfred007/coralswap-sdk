@@ -2,7 +2,7 @@ import { LiquidityModule } from "../src/modules/liquidity";
 import { CoralSwapClient } from "../src/client";
 import { PairClient } from "../src/contracts/pair";
 import { PRECISION } from "../src/config";
-import { ValidationError } from "../src/errors";
+import { ValidationError, TransactionError } from "../src/errors";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -388,12 +388,10 @@ describe("LiquidityModule", () => {
         getReserves: jest
           .fn()
           .mockResolvedValue({ reserve0: 1000n, reserve1: 2000n }),
-        getTokens: jest
-          .fn()
-          .mockResolvedValue({
-            token0: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-            token1: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-          }),
+        getTokens: jest.fn().mockResolvedValue({
+          token0: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+          token1: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        }),
         getLPTokenAddress: jest
           .fn()
           .mockResolvedValue(
@@ -562,7 +560,10 @@ describe("LiquidityModule", () => {
     it("throws TransactionError when transaction fails", async () => {
       mockClient.submitTransaction.mockResolvedValue({
         success: false,
-        error: { message: "Insufficient balance" },
+        error: {
+          code: "INSUFFICIENT_BALANCE",
+          message: "Insufficient balance",
+        },
         txHash: "failed-tx-hash",
       });
 
@@ -783,7 +784,10 @@ describe("LiquidityModule", () => {
     it("throws TransactionError when transaction fails", async () => {
       mockClient.submitTransaction.mockResolvedValue({
         success: false,
-        error: { message: "Insufficient LP balance" },
+        error: {
+          code: "INSUFFICIENT_LP_BALANCE",
+          message: "Insufficient LP balance",
+        },
         txHash: "failed-tx-hash",
       });
 

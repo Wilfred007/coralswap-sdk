@@ -51,8 +51,8 @@ describe('Network Switching', () => {
             // but let's assume it's empty and we check if the cache is cleared.
         });
 
-        // Mock factoryAddress if needed
-        (client as any).networkConfig.factoryAddress = 'CC...';
+        // Mock factoryAddress if needed - use a valid Stellar contract address format
+        (client as any).networkConfig.factoryAddress = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE2O';
 
         const factory1 = client.factory;
         expect(factory1).toBeDefined();
@@ -64,7 +64,7 @@ describe('Network Switching', () => {
         // However, since we can't easily check private fields in TS tests without casting,
         // let's just verify properties of the new client are updated if we had different addresses.
 
-        (client as any).networkConfig.factoryAddress = 'DD...';
+        (client as any).networkConfig.factoryAddress = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE2P';
         const factory2 = client.factory;
         expect(factory2).not.toBe(factory1);
     });
