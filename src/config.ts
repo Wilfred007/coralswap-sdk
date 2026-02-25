@@ -68,6 +68,14 @@ export const DEFAULTS = {
 } as const;
 
 /**
+ * Standard default slippage tolerance expressed in basis points.
+ *
+ * This value is used when applications do not provide an explicit
+ * `slippageBps` or `defaultSlippageBps` override.
+ */
+export const DEFAULT_SLIPPAGE = DEFAULTS.slippageBps;
+
+/**
  * Precision constants for Soroban i128 math.
  */
 export const PRECISION = {

@@ -12,6 +12,11 @@ import {
 } from '@/types/events';
 import { ValidationError } from '@/errors';
 
+type TxWithOptionalHash = SorobanRpc.Api.GetSuccessfulTransactionResponse & {
+  hash?: string;
+  id?: string;
+};
+
 // ---------------------------------------------------------------------------
 // Known event topic symbols emitted by CoralSwap Pair contracts
 // ---------------------------------------------------------------------------
