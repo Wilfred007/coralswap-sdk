@@ -19,6 +19,10 @@ jest.mock('@stellar/stellar-sdk', () => {
                 getTransaction: jest.fn(),
             })),
         },
+        Contract: jest.fn().mockImplementation((address) => ({
+            address,
+            call: jest.fn(),
+        })),
     };
 });
 
