@@ -48,4 +48,8 @@ export {
   validateNonNegativeAmount,
   validateSlippage,
   validateDistinctTokens,
+  isValidPath,
 } from './validation';
+
+export { waitNextLedger } from './ledger';
+export type { WaitNextLedgerOptions } from './ledger';
